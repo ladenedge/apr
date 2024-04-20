@@ -21,6 +21,14 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 PROJECT(APR C)
 
+# Add simple support CMAKE_WARNING_AS_ERROR if CMake doesn't
+# support it.
+IF (CMAKE_VERSION VERSION_LESS 3.24)
+  IF(CMAKE_WARNING_AS_ERROR AND MSVC)
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+  ENDIF()
+ENDIF()
+
 SET(apr_name    apr-1)
 SET(apr_libname libapr-1)
 
