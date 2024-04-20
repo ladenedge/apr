@@ -98,11 +98,11 @@ ADD_CUSTOM_TARGET(
 #         you've generated apr.h before using a different build
 
 SET(APR_INCLUDE_DIRECTORIES
-  ${PROJECT_BINARY_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/arch/win32
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/arch/unix
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/private
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/arch/win32>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/arch/unix>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/private>
 )
 
 SET(APR_SYSTEM_LIBS
@@ -298,16 +298,30 @@ IF (APR_BUILD_SHARED)
   ADD_LIBRARY(${apr_libname} SHARED ${APR_SOURCES} ${APR_PUBLIC_HEADERS_GENERATED} libapr.rc)
   LIST(APPEND install_targets ${apr_libname})
   LIST(APPEND install_bin_pdb ${PROJECT_BINARY_DIR}/${apr_libname}.pdb)
-  TARGET_LINK_LIBRARIES(${apr_libname} ${APR_SYSTEM_LIBS})
-  SET_TARGET_PROPERTIES(${apr_libname} PROPERTIES COMPILE_DEFINITIONS "APR_DECLARE_EXPORT;WINNT")
+  TARGET_LINK_LIBRARIES(${apr_libname}
+                        PRIVATE ${APR_SYSTEM_LIBS})
+  TARGET_COMPILE_DEFINITIONS(${apr_libname}
+                             PRIVATE "APR_DECLARE_EXPORT;WINNT"
+                             INTERFACE "APR_DECLARE_IMPORT;WINNT")
+  TARGET_INCLUDE_DIRECTORIES(${apr_libname}
+    PRIVATE ${APR_INCLUDE_DIRECTORIES}
+    INTERFACE $<INSTALL_INTERFACE:include> ${APR_INCLUDE_DIRECTORIES}
+  )
   ADD_DEPENDENCIES(${apr_libname} test_char_header)
 ENDIF()
 
 IF (APR_BUILD_STATIC)
   ADD_LIBRARY(${apr_name} STATIC ${APR_SOURCES} ${APR_PUBLIC_HEADERS_GENERATED})
   LIST(APPEND install_targets ${apr_name})
-  TARGET_LINK_LIBRARIES(${apr_name} ${APR_SYSTEM_LIBS})
-  SET_TARGET_PROPERTIES(${apr_name} PROPERTIES COMPILE_DEFINITIONS "APR_DECLARE_STATIC;WINNT")
+  TARGET_LINK_LIBRARIES(${apr_name}
+                        PRIVATE ${APR_SYSTEM_LIBS})
+  TARGET_COMPILE_DEFINITIONS(${apr_name}
+                             PRIVATE "APR_DECLARE_STATIC;WINNT"
+                             INTERFACE "APR_DECLARE_STATIC;WINNT")
+  TARGET_INCLUDE_DIRECTORIES(${apr_name}
+    PRIVATE ${APR_INCLUDE_DIRECTORIES}
+    INTERFACE $<INSTALL_INTERFACE:include> ${APR_INCLUDE_DIRECTORIES}
+  )
   ADD_DEPENDENCIES(${apr_name} test_char_header)
 ENDIF()
 
@@ -316,12 +330,18 @@ IF (APR_BUILD_SHARED)
   ADD_LIBRARY(libaprapp-1 STATIC misc/win32/apr_app.c misc/win32/internal.c ${APR_PUBLIC_HEADERS_GENERATED})
   LIST(APPEND install_targets libaprapp-1)
   SET_TARGET_PROPERTIES(libaprapp-1 PROPERTIES COMPILE_DEFINITIONS "APR_APP;WINNT")
+  TARGET_INCLUDE_DIRECTORIES(libaprapp-1
+    PRIVATE ${APR_INCLUDE_DIRECTORIES}
+  )
 ENDIF()
 
 IF (APR_BUILD_STATIC)
   ADD_LIBRARY(aprapp-1 STATIC misc/win32/apr_app.c misc/win32/internal.c ${APR_PUBLIC_HEADERS_GENERATED})
   LIST(APPEND install_targets aprapp-1)
   SET_TARGET_PROPERTIES(aprapp-1 PROPERTIES COMPILE_DEFINITIONS "APR_DECLARE_STATIC;APR_APP;WINNT")
+  TARGET_INCLUDE_DIRECTORIES(aprapp-1
+    PRIVATE ${APR_INCLUDE_DIRECTORIES}
+  )
 ENDIF()
 
 IF(APR_BUILD_TESTAPR)
@@ -342,19 +362,14 @@ IF(APR_BUILD_TESTAPR)
   IF(TEST_STATIC_LIBS)
     SET(whichapr    ${apr_name})
     SET(whichaprapp aprapp-1)
-    SET(apiflag     -DAPR_DECLARE_STATIC)
   ELSE()
     SET(whichapr    ${apr_libname})
     SET(whichaprapp libaprapp-1)
-    SET(apiflag)
   ENDIF()
 
   ADD_EXECUTABLE(testapp test/testapp.c)
-  TARGET_LINK_LIBRARIES(testapp ${whichapr} ${whichaprapp} ${APR_SYSTEM_LIBS})
+  TARGET_LINK_LIBRARIES(testapp ${whichapr} ${whichaprapp})
   SET_TARGET_PROPERTIES(testapp PROPERTIES LINK_FLAGS /entry:wmainCRTStartup)
-  IF(apiflag)
-    SET_TARGET_PROPERTIES(testapp PROPERTIES COMPILE_FLAGS ${apiflag})
-  ENDIF()
   ADD_TEST(NAME testapp COMMAND testapp)
 
   SET (APR_TEST_SOURCES
@@ -367,27 +382,21 @@ IF(APR_BUILD_TESTAPR)
   ENDFOREACH()
 
   ADD_EXECUTABLE(testall ${APR_TEST_SOURCES})
-  TARGET_LINK_LIBRARIES(testall ${whichapr} ${APR_SYSTEM_LIBS})
+  TARGET_LINK_LIBRARIES(testall ${whichapr} ws2_32.lib)
   SET_TARGET_PROPERTIES(testall PROPERTIES COMPILE_DEFINITIONS "BINPATH=$<TARGET_FILE_DIR:testall>")
-  IF(apiflag)
-    SET_TARGET_PROPERTIES(testall PROPERTIES COMPILE_FLAGS ${apiflag})
-  ENDIF()
 
   FOREACH(test ${APR_TEST_SUITES})
     ADD_TEST(NAME ${test} COMMAND testall -v ${test})
   ENDFOREACH()
 
   ADD_LIBRARY(mod_test MODULE test/mod_test.c)
-  TARGET_LINK_LIBRARIES(mod_test ${whichapr} ${APR_SYSTEM_LIBS})
+  TARGET_LINK_LIBRARIES(mod_test ${whichapr})
   SET_PROPERTY(TARGET mod_test APPEND PROPERTY LINK_FLAGS /export:print_hello)
   # nasty work-around for difficulties adding more than one additional flag
   # (they get joined in a bad way behind the scenes)
   GET_PROPERTY(link_flags TARGET mod_test PROPERTY LINK_FLAGS)
   SET(link_flags "${link_flags} /export:count_reps")
   SET_TARGET_PROPERTIES(mod_test PROPERTIES LINK_FLAGS ${link_flags})
-  IF(apiflag)
-    SET_TARGET_PROPERTIES(mod_test PROPERTIES COMPILE_FLAGS ${apiflag})
-  ENDIF()
 
   # Build all the single-source executable files with no special build
   # requirements.
@@ -411,11 +420,8 @@ IF(APR_BUILD_TESTAPR)
   FOREACH(sourcefile ${single_source_programs})
     STRING(REGEX REPLACE ".*/([^\\]+)\\.c" "\\1" proggie ${sourcefile})
     ADD_EXECUTABLE(${proggie} ${sourcefile})
-    TARGET_LINK_LIBRARIES(${proggie} ${whichapr} ${APR_SYSTEM_LIBS})
+    TARGET_LINK_LIBRARIES(${proggie} ${whichapr})
     SET_TARGET_PROPERTIES(${proggie} PROPERTIES COMPILE_DEFINITIONS "BINPATH=$<TARGET_FILE_DIR:${proggie}>")
-    IF(apiflag)
-      SET_TARGET_PROPERTIES(${proggie} PROPERTIES COMPILE_FLAGS ${apiflag})
-    ENDIF()
   ENDFOREACH()
 
   # Add tests for programs that run by themselves with no arguments.
