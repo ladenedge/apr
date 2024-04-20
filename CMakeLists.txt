@@ -447,12 +447,19 @@ IF(APR_BUILD_TESTAPR)
 ENDIF (APR_BUILD_TESTAPR)
 
 # Installation
+string(TOLOWER "${PROJECT_NAME}" project_name_lower)
 
-INSTALL(TARGETS ${install_targets}
+INSTALL(TARGETS ${install_targets} EXPORT apr-config
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
        )
+
+INSTALL(EXPORT apr-config
+        NAMESPACE apr::
+        DESTINATION "lib/cmake/${project_name_lower}"
+        FILE "${project_name_lower}-config.cmake"
+)
 
 IF(INSTALL_PDB)
   INSTALL(FILES ${install_bin_pdb}
