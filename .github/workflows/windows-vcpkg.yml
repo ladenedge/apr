@@ -18,7 +18,7 @@ jobs:
         port:
         - apr
         - apr[core]
-        - apr[crypto,dbd-sqlite3,dbd-odbc,private-headers,xlate]
+        - apr[private-headers]
       fail-fast: false
     
     name: "${{ matrix.port }}:${{ matrix.triplet }} on ${{ matrix.os }}"

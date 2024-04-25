@@ -15,9 +15,6 @@ if (VCPKG_TARGET_IS_WINDOWS)
     vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
         FEATURES
             private-headers INSTALL_PRIVATE_H
-            crypto FEATURE_CRYPTO
-            xlate FEATURE_XLATE
-            dbd-sqlite3 FEATURE_DBD_SQLITE3
     )
 
     string(COMPARE EQUAL "${VCPKG_LIBRARY_LINKAGE}" "static" APR_BUILD_STATIC)
@@ -34,13 +31,8 @@ if (VCPKG_TARGET_IS_WINDOWS)
         OPTIONS
             -DAPR_BUILD_STATIC=${APR_BUILD_STATIC}
             -DAPR_BUILD_SHARED=${APR_BUILD_SHARED}
-            -DAPR_MODULAR_DSO=${APR_BUILD_SHARED}
             -DAPR_BUILD_TESTAPR=OFF
             -DINSTALL_PDB=OFF
-            -DAPU_HAVE_CRYPTO=${FEATURE_CRYPTO}
-            -DAPU_HAVE_ICONV=${FEATURE_XLATE}
-            -DAPU_HAVE_SQLITE3=${FEATURE_DBD_SQLITE3}
-            -DAPU_USE_EXPAT=${APU_USE_EXPAT}
             -DAPR_INSTALL_PRIVATE_H=${INSTALL_PRIVATE_H}
     )
 
