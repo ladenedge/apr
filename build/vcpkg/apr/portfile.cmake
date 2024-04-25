@@ -8,7 +8,7 @@ vcpkg_from_github(
     REPO apache/apr
     REF 6445e8804008922f8018aa238aa4d6bba608c49a
     SHA512 0
-    HEAD_REF trunk
+    HEAD_REF 1.7.x
 )
 
 if (VCPKG_TARGET_IS_WINDOWS)
