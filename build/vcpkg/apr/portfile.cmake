@@ -1,4 +1,4 @@
-set(VERSION 2.0.0)
+set(VERSION 1.7.5)
 #
 # Modify REF to latest commit id from https://github.com/apache/apr
 # Update SHA512 with actual SHA512

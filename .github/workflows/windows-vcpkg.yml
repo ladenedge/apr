@@ -16,9 +16,9 @@ jobs:
         - x86-windows
         - x86-windows-static
         port:
-        - apr-2
-        - apr-2[core]
-        - apr-2[crypto,dbd-sqlite3,dbd-odbc,private-headers,xlate]
+        - apr
+        - apr[core]
+        - apr[crypto,dbd-sqlite3,dbd-odbc,private-headers,xlate]
       fail-fast: false
     
     name: "${{ matrix.port }}:${{ matrix.triplet }} on ${{ matrix.os }}"
