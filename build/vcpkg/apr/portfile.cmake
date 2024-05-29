@@ -28,6 +28,7 @@ if (VCPKG_TARGET_IS_WINDOWS)
             -DAPR_BUILD_TESTAPR=OFF
             -DINSTALL_PDB=OFF
             -DAPR_INSTALL_PRIVATE_H=${INSTALL_PRIVATE_H}
+            -DAPR_INSTALL_INCLUDE_DIR=include/apr-1
     )
 
     vcpkg_cmake_install()
